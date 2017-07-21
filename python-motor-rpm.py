@@ -71,7 +71,7 @@ motor.write(message.encode())
 
 
 
-for k in range(200):
+for k in range(10):
 	i = arduino.readline()
 	#print(str(i[0]))
 	#print("Warming up")
@@ -84,8 +84,7 @@ motor.write(message.encode())
 time.sleep(1)
 #message = 'M1R'+chr(speed)+'\r\n'
 #motor.write(message.encode())
-for k in range(5):
-	time.sleep(1)
+for k in range(50):
 	print("start loop")
 	message = 'M1R'+chr(speed)+'\r\n'
 	motor.write(message.encode())
