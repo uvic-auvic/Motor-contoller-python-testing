@@ -9,17 +9,23 @@ start = time.time()
 
 sensor_port = 0
 sensor_starboard = 0
-const_star = 25;
-const_port = 26;
+sensor_front_1 = 0
+sensor_front_2 = 0 
+sensor_front = 0
+sensor_back_1 = 0
+sensor_back_2 = 0 
+sensor_back = 0
+const_star = 25
+const_port = 26
 
 motor_running_state = False 
 motor_terminate = False
 
 file = open("testfile.csv",'w') 
-file.write("Time Since Start, Startboard, Port, RPM \n")
+file.write("Time Since Start, Startboard, Port, Front, Back, RPM \n")
 
 arduino = serial.Serial(
-	port='COM5',
+	port='COM7',
 	baudrate=256000,
 	#parity=serial.None,
 	stopbits=serial.STOPBITS_ONE,
@@ -35,6 +41,8 @@ motor = serial.Serial(
 	stopbits=serial.STOPBITS_ONE,
 	bytesize=serial.EIGHTBITS
 )
+
+print("Serial opened")
 
 def motor_run():
 	print(time.ctime())
@@ -61,34 +69,58 @@ motor_running_state = True
 message = 'M1R'+chr(speed)+'\r\n'
 motor.write(message.encode())
 
+
+
 for k in range(200):
 	i = arduino.readline()
+	#print(str(i[0]))
+	#print("Warming up")
 
-motor_run()
+#motor_run()
 
+print("Motor task created")
+message = 'M1R'+chr(speed)+'\r\n'
+motor.write(message.encode())
 time.sleep(1)
 #message = 'M1R'+chr(speed)+'\r\n'
 #motor.write(message.encode())
-for k in range(500):
+for k in range(5):
+	time.sleep(1)
+	print("start loop")
+	message = 'M1R'+chr(speed)+'\r\n'
+	motor.write(message.encode())
 	#arduino.write(str.encode())
-	print("I enetered for loop")
+	arduino.flush()
 	i = arduino.readline()
+	
 	try:
-		print("I tried stuff")
 		motor.write(b'RVA\r\n')
-		sensor_starboard = (i[0] - const_star)/20.4
-		sensor_port = (i[2] - const_port)/20.4
+		sensor_starboard = i[0]
+		sensor_port = i[2]
+		sensor_front_1 = i[4]
+		sensor_front_2 = i[6] 
+		sensor_back_1 = i[8]
+		sensor_back_2 = i[10]
 		x = motor.readline()
 	except:
 		print("Something went wrong")
-		file.write("Err,Err,Err, Err\n")
+		file.write("Err,Err,Err, Err, Err, Err \n")
 	else:
 		print("killing it")
 		y = (x[2] * 255 + x[1])*60
+		sensor_front = sensor_front_1 - sensor_front_2
+		sensor_back = sensor_back_1 - sensor_back_2
 		print("Sensor Starboard: ")
+		
 		print(sensor_starboard)
+		"""
 		print("Sensor Port: ")
 		print(sensor_port)
+		print( "Sensor Front: ")
+		print (sensor_front)
+		print( "Sensor Back: ")
+		print (sensor_back)
+		"""
 		print ("RPM: ")
 		print(y)
 		current = time.time()
@@ -96,6 +128,8 @@ for k in range(500):
 		file.write(str(elapsed) + ',')
 		file.write(str(sensor_starboard) + ',')
 		file.write(str(sensor_port) + ',')
+		file.write(str(sensor_front) + ',')
+		file.write(str(sensor_back) + ',')
 		file.write(str(y) + '\n')
 print("Done")
 motor.write(b'STP\r\n')
