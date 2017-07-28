@@ -4,12 +4,14 @@ import time
 import serial
 import datetime
 import threading
+from time import sleep
+from threading import Thread
 
 #global vars
-speed = 100
+
 
 #motor stuff
-def doMotors(time, dir, speed):
+def doMotors(dir, speed):
     left_motor = serial.Serial(
 	    port='/dev/ttyUSB0',
 	    baudrate=9600,
@@ -29,6 +31,34 @@ def doMotors(time, dir, speed):
 	    bytesize=serial.EIGHTBITS
     )
     print "MOTORS DONE"
+    while True:
+	    x = dir
+	    string = "STP\r\n"
+	    left_motor.write(string.encode())
+	    right_motor.write(string.encode())
+	
+	    if x == "UP":
+		    string = "M3F" + chr(speed) + "\r\n"
+		    left_motor.write(string.encode())
+		    right_motor.write(string.encode())
+	    if x == "DOWN":
+		    string = "M3R" + chr(speed) + "\r\n"
+		    left_motor.write(string.encode())
+		    right_motor.write(string.encode())
+	    if x == "FORWARD":
+		    string = "M1F" + chr(speed) + "\r\n"
+		    left_motor.write(string.encode())
+		    right_motor.write(string.encode())
+		    string = "M2F" + chr(speed) + "\r\n"
+		    left_motor.write(string.encode())
+		    right_motor.write(string.encode())
+	    if x == "REVERSE":
+		    string = "M1R" + chr(speed) + "\r\n"
+		    left_motor.write(string.encode())
+		    right_motor.write(string.encode())
+		    string = "M2R" + chr(speed) + "\r\n"
+		    left_motor.write(string.encode())
+		    right_motor.write(string.encode())
 #function space
 
 def UP():
@@ -61,11 +91,20 @@ def parse_csv():
         try:
             reader = csv.reader(f)
             for row in reader:
-                print row
-                doMotors(row[0], row[1], row[2])
+                counter(row[0],doMotors(row[1], row[2]))
         finally:
             f.close()
 
+#timer
+def counter(time,task):
+
+    t = Thread(target=task)
+
+    t.daemon = True
+    t.start()
+
+    snooz = time
+    sleep(snooz)
 
 #main
 def runMotors(time, dir, speed):
@@ -76,9 +115,8 @@ def runMotors(time, dir, speed):
         #if x != 'continue':
         #    return 0
         #print "continue with program"
-
+        print '0'
 
 
 #run space
 parse_csv()
-
