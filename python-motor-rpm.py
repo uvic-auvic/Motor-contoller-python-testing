@@ -2,30 +2,31 @@ import time #libraries
 import serial
 import datetime
 import threading
+import motor_control
 
-speed = 180
+speed = 110 #forward max:110 min:30 #back max:80 min:30
+
+data_loops = 2000
 
 start = time.time()
 
-sensor_port = 0
-sensor_starboard = 0
-sensor_front_1 = 0
-sensor_front_2 = 0 
-sensor_front = 0
-sensor_back_1 = 0
-sensor_back_2 = 0 
 sensor_back = 0
-const_star = 25
-const_port = 26
+sensor_back_ADC =0
+sensor_front = 0
+sensor_front_ADC = 0
+const_front = 58
+const_back = 25
 
-motor_running_state = False 
+#motor_string = 'M1F'
+
+motor_running_state = False
 motor_terminate = False
 
-file = open("testfile.csv",'w') 
-file.write("Time Since Start, Startboard, Port, Front, Back, RPM \n")
+file = open("testfile.csv",'w')
+file.write("Time Since Start, Front, Front ADC, Back, Back ADC, RPM \n")
 
 arduino = serial.Serial(
-	port='COM7',
+	port='/dev/tty.usbmodem1411',
 	baudrate=256000,
 	#parity=serial.None,
 	stopbits=serial.STOPBITS_ONE,
@@ -33,120 +34,62 @@ arduino = serial.Serial(
 )
 #arduino.open()
 
-
-motor = serial.Serial(
-	port='COM6',
-	baudrate=9600,
-	#parity=serial.None,
-	stopbits=serial.STOPBITS_ONE,
-	bytesize=serial.EIGHTBITS
-)
+motor = motor_control.get_motor_instance()
+motor_control.set_forward()
 
 print("Serial opened")
 
-def motor_run():
-	print(time.ctime())
-	if motor_running_state is True:
-		message = 'M1R'+chr(speed)+'\r\n'
-		try:
-			motor.write(message.encode())
-		except:
-			print("Serial port probably closed")
-	else:
-		try:
-			motor.write(motor.write(b'STP\r\n'))
-		except:
-			print("Serial port probably closed")
-	if motor_terminate is True:
-		exit()
-	threading.Timer(1, motor_run).start()
-
-
-
 motor_running_state = True
 
+motor_control.rev_up(30, speed, 0.1)
 
-message = 'M1R'+chr(speed)+'\r\n'
-motor.write(message.encode())
+for i in range(2):
+	motor_control.set_speed(speed)
+	time.sleep(1)
 
+arduino.flush()
 
+print("start loop")
+for current_loop in range(data_loops):
+	motor_control.set_speed(speed)
 
-for k in range(10):
-	i = arduino.readline()
-	#print(str(i[0]))
-	#print("Warming up")
+	arduino.reset_input_buffer()
+	arduino.write(b'R')
+	#first line may be gimped
+	arduino_adc = arduino.read(4)
 
-#motor_run()
-
-print("Motor task created")
-message = 'M1R'+chr(speed)+'\r\n'
-motor.write(message.encode())
-time.sleep(1)
-#message = 'M1R'+chr(speed)+'\r\n'
-#motor.write(message.encode())
-for k in range(50):
-	print("start loop")
-	message = 'M1R'+chr(speed)+'\r\n'
-	motor.write(message.encode())
-	#arduino.write(str.encode())
-	arduino.flush()
-	i = arduino.readline()
-	
 	try:
-		motor.write(b'RVA\r\n')
-		sensor_starboard = i[0]
-		sensor_port = i[2]
-		sensor_front_1 = i[4]
-		sensor_front_2 = i[6] 
-		sensor_back_1 = i[8]
-		sensor_back_2 = i[10]
-		x = motor.readline()
+		motor.write(b'RV1\r\n')
+		sensor_front = (arduino_adc[0]-const_front)/2.9348
+		sensor_front_ADC = arduino_adc[0]
+		sensor_back = (arduino_adc[1]-const_back)/2.8563
+		sensor_back_ADC = arduino_adc[1]
+		revs = motor.read(4)
+		motor.reset_input_buffer()
 	except:
 		print("Something went wrong")
 		file.write("Err,Err,Err, Err, Err, Err \n")
+		print(arduino_adc)
 	else:
-		print("killing it")
-		y = (x[2] * 255 + x[1])*60
-		sensor_front = sensor_front_1 - sensor_front_2
-		sensor_back = sensor_back_1 - sensor_back_2
-		print("Sensor Starboard: ")
-		
-		print(sensor_starboard)
-		"""
-		print("Sensor Port: ")
-		print(sensor_port)
-		print( "Sensor Front: ")
-		print (sensor_front)
-		print( "Sensor Back: ")
-		print (sensor_back)
-		"""
-		print ("RPM: ")
-		print(y)
+		#print(revs)
+		rpm = (revs[1] * 255 + revs[0])
+		#print (revs)
+		if current_loop % 50 == 0:
+			percent = int(100 * float(current_loop)/float(data_loops))
+			print(str(percent) + "% done")
+			print( "Sensor Front: " + str(sensor_front))
+			print( "Sensor Back: " + str(sensor_back))
+			print ("RPM: " + str(rpm))
 		current = time.time()
 		elapsed = current - start
 		file.write(str(elapsed) + ',')
-		file.write(str(sensor_starboard) + ',')
-		file.write(str(sensor_port) + ',')
 		file.write(str(sensor_front) + ',')
+		file.write(str(sensor_front_ADC) + ',')
 		file.write(str(sensor_back) + ',')
-		file.write(str(y) + '\n')
+		file.write(str(sensor_back_ADC) + ',')
+		file.write(str(rpm) + '\n')
 print("Done")
 motor.write(b'STP\r\n')
 motor.close()
 file.close()
-motor_running_state = False
-motor_terminate = True
-exit() 
-
-
-#	for i in range(3):
-#		time.sleep(1)
-#		motor.write(b'RVA\r\n')
-#		x = motor.readline()
-#		y = (x[2] * 255 + x[1])*60
-#		print(y)
-#	motor.write(b'STP\r\n')
-#	motor.close()
-
-	
-# configure the serial connections (the parameters differs on the device you are connecting to)
+exit()

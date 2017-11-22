@@ -104,17 +104,21 @@ void loop() {
  delay(5);
 //F2outputValue1= F2outputValue1 - F2Cal;
 //F3outputValue1= F3outputValue1 - F3Cal;
-Serial.print(char(F2outputValue1)); //element 0
-Serial.print(":");
-Serial.print(char(F3outputValue1)); //element 2
-Serial.print(":");
-Serial.print(char(F1outputValue1));
-Serial.print(":");
-Serial.print(char(F1outputValue2));
-Serial.print(":");
-Serial.print(char(F4outputValue1));
-Serial.print(":");
-Serial.println(char(F4outputValue2));
+if(Serial.available() > 0)
+  if(Serial.read() == 'R'){
+    Serial.print(char(F2outputValue1)); //element 0
+    //Serial.print(":");
+    Serial.println(char(F3outputValue1)); //element 2
+    /*Serial.print(":");
+    Serial.print(char(F1outputValue1));
+    Serial.print(":");
+    Serial.print(char(F1outputValue2));
+    Serial.print(":");
+    Serial.print(char(F4outputValue1));
+    Serial.print(":");
+    Serial.println(char(F4outputValue2));
+    */
+  }
 /*  if(Serial.available() > 0 ){
     while(Serial.available() > 0){
       if(Serial.read() == 'R'){
