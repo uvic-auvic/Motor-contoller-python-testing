@@ -4,9 +4,9 @@ import datetime
 import threading
 import motor_control
 
-speed = 110 #forward max:110 min:30 #back max:80 min:30
+speed = 30 #forward max:110 min:30 #back max:80 min:30
 
-data_loops = 2000
+data_loops = 500
 
 start = time.time()
 
@@ -26,7 +26,7 @@ file = open("testfile.csv",'w')
 file.write("Time Since Start, Front, Front ADC, Back, Back ADC, RPM \n")
 
 arduino = serial.Serial(
-	port='/dev/tty.usbmodem1411',
+	port='/dev/tty.usbmodem1421',
 	baudrate=256000,
 	#parity=serial.None,
 	stopbits=serial.STOPBITS_ONE,

@@ -38,6 +38,8 @@ def rev_up(min, max, delay):
 		time.sleep(delay)
 
 def set_speed(speed, do_print = False):
+	if speed>110 or speed < 0:
+		raise ValueError("Speed out of range: "+ str(speed))
 	message = motor_string+chr(speed)+'\r\n'
 	if do_print:
 		print("string out: " + message + " speed is: " + str(speed))
