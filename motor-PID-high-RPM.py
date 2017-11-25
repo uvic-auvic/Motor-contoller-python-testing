@@ -5,38 +5,28 @@ import threading
 import motor_control
 import math
 
+k=0
+ie=0
+
+#PID values
+kd= 0.0001
+kp= 0.01
+ki =  0.028
+#0.0001
+
 #thruster model
-Td= -4 #desired torque in N
+Td= 0 #desired torque
 density = 998.2 #kg/m^3
 diameter = 0.07928 #m
 k3 = 6*10^(-10) #must verify this value
 #rpmd = math.sqrt(Td/(density*diameter^4*k3)) #calculates desired rpm from model and thrust input
-rpmd = 2500 #minimum in air is 2400 because of command 30
+rpmd = 8000 #minimum in air is 2400 because of command 30
 
+#motor direction
 forward= 1
 reverse = 0
-#motor direction
-if Td<0:
-	direction =reverse
-if Td>0:
-	direction = forward #sets motor direction
+direction = forward #sets motor direction
 
-ie=0
-
-#PID values
-if direction ==forward:
-	kd= 0.000000015*rpmd-0.000038461
-	kp= 0.000000307*rpmd+0.007230769
-	ki =  0.000003076*rpmd+0.000307692
-if direction ==reverse:
-	if rpmd > 5000:
-		kd= 0.000000015*rpmd-0.000038461
-		kp= 0.000002358*rpmd+0.002075471
-		ki =  0.000004313*rpmd-0.002784313
-	if rpmd <= 5000:
-		kd = 0.0001
-		kp = 0.008
-		ki = 0.000014814*rpmd-0.024074074
 #command input
 speed = 0 #inital speed value
 
@@ -89,39 +79,8 @@ for i in range(2):
 	if speed<30:
 		speed = 0
 
-	motor_control.set_speed(int(speed))
+	motor_control.set_speed(speed)
 	time.sleep(1)
-
-	if speed>=30:
-		for i in range(100):
-			motor_control.set_speed(int(speed))
-			arduino.reset_input_buffer()
-			arduino.write(b'R')
-			arduino_adc = arduino.read(4)
-			try:
-				motor.write(b'RV1\r\n')
-				sensor_front = (arduino_adc[0]-const_front)/2.9348
-				sensor_front_ADC = arduino_adc[0]
-				sensor_back = (arduino_adc[1]-const_back)/2.8563
-				sensor_back_ADC = arduino_adc[1]
-				revs = motor.read(4)
-				motor.reset_input_buffer()
-			except:
-				print("Something went wrong")
-				file.write("Err,Err,Err, Err, Err, Err \n")
-				print(arduino_adc)
-			else:
-				#print(revs)
-				rpm = (revs[1] * 255 + revs[0])
-				#print (revs)
-				current = time.time()
-				elapsed = current - start
-				file.write(str(elapsed) + ',')
-				file.write(str(sensor_front) + ',')
-				file.write(str(sensor_front_ADC) + ',')
-				file.write(str(sensor_back) + ',')
-				file.write(str(sensor_back_ADC) + ',')
-				file.write(str(rpm) + '\n')
 
 arduino.flush()
 

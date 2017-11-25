@@ -4,7 +4,7 @@ import datetime
 import threading
 import motor_control
 
-speed = 30 #forward max:110 min:30 #back max:80 min:30
+speed = 40 #forward max:110 min:30 #back max:80 min:30
 
 data_loops = 500
 
@@ -35,7 +35,7 @@ arduino = serial.Serial(
 #arduino.open()
 
 motor = motor_control.get_motor_instance()
-motor_control.set_forward()
+motor_control.set_reverse()
 
 print("Serial opened")
 
