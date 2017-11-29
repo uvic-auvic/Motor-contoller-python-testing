@@ -3,7 +3,7 @@ import serial, time
 motor_string = 'M1F'
 
 motor = serial.Serial(
-	port='/dev/cu.usbserial-DN00ONLS',
+	port='COM12',
 	baudrate=9600,
 	#parity=serial.None,
 	stopbits=serial.STOPBITS_ONE,
@@ -44,6 +44,14 @@ def set_speed(speed, do_print = False):
 	if do_print:
 		print("string out: " + message + " speed is: " + str(speed))
 	motor.write(message.encode())
+	
+def get_rpm():
+	motor.reset_input_buffer()
+	message = b"RV1\r\n"
+	motor.write(message)
+	revs = motor.read(4)
+	rpm=(revs[1] * 255 + revs[0])
+	return rpm
 
 def stop():
 	motor.write(b'STP\r\n')
